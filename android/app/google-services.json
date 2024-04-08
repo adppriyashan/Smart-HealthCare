@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "828312716175",
+    "firebase_url": "https://hospital-bmi-default-rtdb.firebaseio.com",
+    "project_id": "hospital-bmi",
+    "storage_bucket": "hospital-bmi.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:828312716175:android:c0a24fe44907cc160d01fa",
+        "android_client_info": {
+          "package_name": "com.aries.smarthealthcare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8ENPhFS3_i1gkEUGpGMKCBL0ZTxZQod4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
