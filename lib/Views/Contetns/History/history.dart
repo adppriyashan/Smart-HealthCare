@@ -1,4 +1,3 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:smarthealthcare/Models/Utils/Colors.dart';
@@ -6,13 +5,16 @@ import 'package:smarthealthcare/Models/Utils/Common.dart';
 import 'package:smarthealthcare/Models/Utils/FirebaseStructure.dart';
 import 'package:smarthealthcare/Models/Utils/Routes.dart';
 import 'package:smarthealthcare/Models/Utils/Utils.dart';
+import 'package:flutter_expanded_tile/flutter_expanded_tile.dart';
 import 'package:intl/intl.dart';
 import 'package:smarthealthcare/Views/Widgets/graph_view.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import '../../Widgets/custom_text_datetime_chooser.dart';
 
 class History extends StatefulWidget {
-  const History({Key? key}) : super(key: key);
+  final String? user;
+
+  const History({Key? key, this.user}) : super(key: key);
 
   @override
   State<History> createState() => _HistoryState();
@@ -30,23 +32,12 @@ class _HistoryState extends State<History> {
   bool useFilters = false;
   bool showFilters = false;
 
-  bool isPlaying = false;
-  String? playingId;
-
-  final player = AudioPlayer();
-
   @override
   void initState() {
     Future.delayed(Duration.zero, () {
       getData();
     });
     super.initState();
-  }
-
-  @override
-  void dispose() {
-    player.dispose();
-    super.dispose();
   }
 
   @override
@@ -178,6 +169,31 @@ class _HistoryState extends State<History> {
                                           style: TextStyle(),
                                         ),
                                       )),
+                                  const SizedBox(
+                                    height: 10.0,
+                                  ),
+                                  SizedBox(
+                                      width: double.infinity,
+                                      height: 50.0,
+                                      child: TextButton(
+                                        style: ButtonStyle(
+                                          foregroundColor:
+                                              MaterialStateProperty.all<Color>(
+                                                  colorWhite),
+                                          backgroundColor:
+                                              MaterialStateProperty.all<Color>(
+                                                  colorPrimary),
+                                        ),
+                                        onPressed: () async {
+                                          useFilters = true;
+                                          getData();
+                                          viewGraph();
+                                        },
+                                        child: const Text(
+                                          "Graph View",
+                                          style: TextStyle(),
+                                        ),
+                                      ))
                                 ],
                               ),
                             ),
@@ -203,9 +219,20 @@ class _HistoryState extends State<History> {
                                       child: Padding(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 5.0, vertical: 5.0),
-                                          child: ListTile(
+                                          child: ExpandedTile(
+                                            theme: ExpandedTileThemeData(
+                                              headerRadius: 24.0,
+                                              headerPadding:
+                                                  const EdgeInsets.all(24.0),
+                                              headerSplashColor: colorSecondary
+                                                  .withOpacity(0.1),
+                                              contentBackgroundColor: color7,
+                                              contentPadding:
+                                                  const EdgeInsets.all(24.0),
+                                              contentRadius: 12.0,
+                                            ),
                                             leading: Icon(
-                                              Icons.history_toggle_off,
+                                              Icons.health_and_safety_outlined,
                                               color: colorPrimary,
                                               size: 35.0,
                                             ),
@@ -218,47 +245,60 @@ class _HistoryState extends State<History> {
                                                   fontWeight: FontWeight.w400,
                                                   fontSize: 15.0),
                                             ),
-                                            subtitle: Text(
-                                              getDateTime(rec['value']
-                                                  ['timestamp'] as int),
-                                              style: TextStyle(
-                                                  color: colorGrey,
-                                                  fontWeight: FontWeight.w400,
-                                                  fontSize: 14.0),
+                                            content: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                getHistoryCard(
+                                                    Icons.person_2_outlined,
+                                                    'BMI',
+                                                    rec['value']['body-bmi-val']
+                                                        .toString(),
+                                                    symbol: 'bmi'),
+                                                getHistoryCard(
+                                                    Icons.line_weight_outlined,
+                                                    'BMI Status',
+                                                    rec['value']['body-bmi-sta']
+                                                        .toString()),
+                                                getHistoryCard(
+                                                    Icons
+                                                        .monitor_heart_outlined,
+                                                    'BPM',
+                                                    rec['value']['body-bpm']
+                                                        .toString(),
+                                                    symbol: 'bpm'),
+                                                getHistoryCard(
+                                                    Icons.height_outlined,
+                                                    'Height',
+                                                    rec['value']['body-hight']
+                                                        .toString(),
+                                                    symbol: 'm'),
+                                                getHistoryCard(
+                                                    Icons
+                                                        .monitor_weight_outlined,
+                                                    'Weight',
+                                                    rec['value']['body-weight']
+                                                        .toString(),
+                                                    symbol: 'g'),
+                                                getHistoryCard(
+                                                    Icons
+                                                        .thermostat_auto_outlined,
+                                                    'Temperature',
+                                                    rec['value']['body-temp']
+                                                        .toString(),
+                                                    symbol: '°C'),
+                                                getHistoryCard(
+                                                    Icons
+                                                        .calendar_month_outlined,
+                                                    'Datetime',
+                                                    getDateTime(int.parse(
+                                                        rec['value']
+                                                                ['timestamp']
+                                                            .toString()))),
+                                              ],
                                             ),
-                                            trailing: (playingId == null ||
-                                                    playingId == rec['key'])
-                                                ? IconButton(
-                                                    onPressed: () async {
-                                                      playingId = rec['key'];
-
-                                                      if (player.state ==
-                                                          PlayerState.playing) {
-                                                        await player.stop();
-                                                        playingId = null;
-                                                      } else {
-                                                        await player.play(
-                                                            UrlSource(
-                                                                rec['value']
-                                                                    ['voice']));
-                                                      }
-
-                                                      setState(() {});
-                                                    },
-                                                    icon: Icon(
-                                                      player.state ==
-                                                                  PlayerState
-                                                                      .playing &&
-                                                              playingId ==
-                                                                  rec['key']
-                                                          ? Icons.pause
-                                                          : Icons.play_arrow,
-                                                      color: !isPlaying
-                                                          ? color1
-                                                          : colorGrey,
-                                                      size: 35.0,
-                                                    ))
-                                                : null,
+                                            controller: ExpandedTileController(
+                                                isExpanded: false),
                                           )),
                                     )
                                 ]),
@@ -278,33 +318,54 @@ class _HistoryState extends State<History> {
   Future<void> getData() async {
     _databaseReference
         .child(FirebaseStructure.HISTORY)
+        .child(widget.user ?? CustomUtils.loggedInUser!.uid)
         .once()
         .then((DatabaseEvent data) {
       list.clear();
       for (DataSnapshot element in data.snapshot.children) {
-        dynamic value = element.value;
+        dynamic rec = element.value;
 
         if (useFilters == true &&
             start.text.isNotEmpty &&
             end.text.isNotEmpty) {
           DateTime currentDateTime =
-              DateTime.fromMillisecondsSinceEpoch(value['timestamp'] as int);
+              DateTime.fromMillisecondsSinceEpoch(rec['timestamp'] as int);
           if (currentDateTime.isAfter(
                   DateFormat("yyyy/MM/dd hh:mm a").parse(start.text)) &&
               currentDateTime
                   .isBefore(DateFormat("yyyy/MM/dd hh:mm a").parse(end.text))) {
-            list.add({'key': element.key, 'value': value});
+            list.add({'key': element.key, 'value': rec});
           }
         } else {
-          list.add({'key': element.key, 'value': value});
+          list.add({'key': element.key, 'value': rec});
         }
-
-        print({'key': element.key, 'value': value});
       }
       setState(() {
         useFilters = false;
       });
     });
+  }
+
+  Future<void> viewGraph() async {
+    if (list.isNotEmpty) {
+      final List<ChartData> chartData1 = [];
+      for (var element in list) {
+        chartData1.add(ChartData(
+            getDateTime(int.parse(element['value']['timestamp'].toString())),
+            double.parse(element['value']['body-bmi-val'].toString())));
+      }
+
+      showModalBottomSheet<void>(
+          context: context,
+          builder: (BuildContext context) {
+            return GraphView(
+              chartData1: chartData1,
+              label1: "BMI Values",
+            );
+          });
+    } else {
+      CustomUtils.showToast("No data found to create graph");
+    }
   }
 
   getHistoryCard(IconData icon, String title, String param,

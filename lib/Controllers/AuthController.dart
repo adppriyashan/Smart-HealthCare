@@ -90,6 +90,7 @@ class AuthController {
       Map<dynamic, dynamic> profileUserData = event.snapshot.value as Map;
       if (event.snapshot.value != null) {
         user = LoggedUser(
+            mobile: profileUserData['mobile'],
             name: profileUserData['name'],
             email: _auth.currentUser!.email,
             type: profileUserData['type'],

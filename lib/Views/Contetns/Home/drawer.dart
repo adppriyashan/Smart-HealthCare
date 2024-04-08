@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:smarthealthcare/Controllers/AuthController.dart';
+import 'package:smarthealthcare/Models/DB/User.dart';
 import 'package:smarthealthcare/Models/Utils/Colors.dart';
 import 'package:smarthealthcare/Models/Utils/Common.dart';
 import 'package:smarthealthcare/Models/Utils/Images.dart';
 import 'package:smarthealthcare/Models/Utils/Routes.dart';
 import 'package:smarthealthcare/Models/Utils/Utils.dart';
-import 'package:smarthealthcare/Views/Contetns/DropMode/drop-mode.dart';
 import 'package:smarthealthcare/Views/Contetns/History/history.dart';
+import 'package:smarthealthcare/Views/Contetns/Users/user.dart';
 
 class HomeDrawer extends StatelessWidget {
   HomeDrawer({Key? key}) : super(key: key);
@@ -90,40 +91,42 @@ class HomeDrawer extends StatelessWidget {
               size: 15.0,
             ),
           ),
-          ListTile(
-            onTap: () => Routes(context: context).navigate(const History()),
-            tileColor: color6,
-            leading: Icon(
-              Icons.history_outlined,
-              color: color15,
+          if (CustomUtils.loggedInUser!.type == LoggedUser.USER)
+            ListTile(
+              onTap: () => Routes(context: context).navigate(const History()),
+              tileColor: color6,
+              leading: Icon(
+                Icons.history_outlined,
+                color: color15,
+              ),
+              title: Text(
+                'History',
+                style: TextStyle(color: color15, fontWeight: FontWeight.w400),
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios,
+                color: color15,
+                size: 15.0,
+              ),
             ),
-            title: Text(
-              'History',
-              style: TextStyle(color: color15, fontWeight: FontWeight.w400),
+          if (CustomUtils.loggedInUser!.type == LoggedUser.DOCTOR)
+            ListTile(
+              onTap: () => Routes(context: context).navigate(const Users()),
+              tileColor: color6,
+              leading: Icon(
+                Icons.group_work_outlined,
+                color: color15,
+              ),
+              title: Text(
+                'Users',
+                style: TextStyle(color: color15, fontWeight: FontWeight.w400),
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios,
+                color: color15,
+                size: 15.0,
+              ),
             ),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              color: color15,
-              size: 15.0,
-            ),
-          ),
-          ListTile(
-            onTap: () => Routes(context: context).navigate(const DropMode()),
-            tileColor: color6,
-            leading: Icon(
-              Icons.emergency_outlined,
-              color: color15,
-            ),
-            title: Text(
-              'Drop Mode',
-              style: TextStyle(color: color15, fontWeight: FontWeight.w400),
-            ),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              color: color15,
-              size: 15.0,
-            ),
-          ),
           ListTile(
             onTap: () => _authController.logout(context),
             tileColor: color6,

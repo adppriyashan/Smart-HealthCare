@@ -7,5 +7,4 @@ String defaultImg = 'assets/images/default.png';
 
 String homeBg = 'assets/images/home_bg.png';
 String defaultJson = 'assets/images/default_json.png';
-String uploadImg = 'assets/images/upload.png';
-String droneDropImg = 'assets/images/drone_drop.gif';
+String homeImage = 'assets/images/home.png';

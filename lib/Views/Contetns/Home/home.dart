@@ -1,11 +1,7 @@
-import 'dart:io';
-
 import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:smarthealthcare/Models/DB/User.dart';
 import 'package:smarthealthcare/Models/Strings/app.dart';
 import 'package:smarthealthcare/Models/Utils/Colors.dart';
 import 'package:smarthealthcare/Models/Utils/Common.dart';
@@ -13,9 +9,7 @@ import 'package:smarthealthcare/Models/Utils/FirebaseStructure.dart';
 import 'package:smarthealthcare/Models/Utils/Images.dart';
 import 'package:smarthealthcare/Models/Utils/Utils.dart';
 import 'package:smarthealthcare/Views/Contetns/Home/drawer.dart';
-import 'package:smarthealthcare/Views/Widgets/custom_button.dart';
 import 'package:toggle_switch/toggle_switch.dart';
-import 'package:uuid/uuid.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -27,15 +21,16 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  final _formKey = GlobalKey<FormState>();
+
   final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref();
 
-  FilePickerResult? _filePicker;
-  File? selectedFile;
-  String? extension;
+  dynamic dataLive = null;
 
   @override
   void initState() {
     Future.delayed(Duration.zero, () {
+      getData();
       initNotifications();
     });
     super.initState();
@@ -102,52 +97,73 @@ class _HomeState extends State<Home> {
                                   ],
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () {
-                                  clearData();
-                                },
-                                child: Icon(
-                                  Icons.refresh,
-                                  color: colorWhite,
-                                ),
-                              )
+                              Visibility(
+                                  visible: CustomUtils.loggedInUser!.type ==
+                                      LoggedUser.USER,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      enrollForQR();
+                                    },
+                                    child: Icon(
+                                      Icons.input_outlined,
+                                      color: colorWhite,
+                                    ),
+                                  ))
                             ],
                           ),
                         ),
                       )),
                   Expanded(
-                      child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        uploadImg,
-                        width: displaySize.width * 0.8,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 45.0, vertical: 5.0),
-                        child: CustomButton(
-                          buttonText: selectedFile != null
-                              ? "Upload"
-                              : "Choose Audio File",
-                          textColor: color6,
-                          backgroundColor: colorPrimary,
-                          isBorder: false,
-                          borderColor: color6,
-                          onclickFunction: () {
-                            if (selectedFile != null) {
-                              upload();
-                            } else {
-                              showChooserType();
-                            }
-                          },
-                        ),
-                      )
-                    ],
-                  ))
+                      flex: CustomUtils.loggedInUser!.type == LoggedUser.DOCTOR
+                          ? 1
+                          : 0,
+                      child: Center(
+                        child: SizedBox(
+                            width: displaySize.width * 0.8,
+                            child: Image.asset(homeImage)),
+                      )),
+                  if (dataLive != null)
+                    getLiveTile(Icons.person_2_outlined, "BMI",
+                        dataLive['body-bmi-val'] ?? '',
+                        symbol: 'bmi'),
+                  if (dataLive != null)
+                    getLiveTile(
+                        Icons.line_weight_outlined,
+                        "BMI Status",
+                        (dataLive['body-bmi-sta'] ?? '')
+                            .toString()
+                            .toUpperCase()),
+                  if (dataLive != null)
+                    getLiveTile(Icons.monitor_heart_outlined, "BPM",
+                        dataLive['body-bpm'] ?? '',
+                        symbol: 'bpm'),
+                  if (dataLive != null)
+                    getLiveTile(Icons.height_outlined, "Height",
+                        dataLive['body-hight'] ?? '',
+                        symbol: 'm'),
+                  if (dataLive != null)
+                    getLiveTile(Icons.monitor_weight_outlined, "Weight",
+                        dataLive['body-weight'] ?? '',
+                        symbol: 'g'),
+                  if (dataLive != null)
+                    getLiveTile(Icons.thermostat_auto_outlined, "Temperature",
+                        dataLive['body-temp'] ?? '',
+                        symbol: '°C')
                 ],
               )),
         ));
+  }
+
+  void getData() {
+    _databaseReference
+        .child(FirebaseStructure.LIVEDATA)
+        .child(CustomUtils.loggedInUser!.uid)
+        .onValue
+        .listen((DatabaseEvent data) async {
+      setState(() {
+        dataLive = data.snapshot.value;
+      });
+    });
   }
 
   void initNotifications() {
@@ -178,44 +194,70 @@ class _HomeState extends State<Home> {
     });
   }
 
-  upload() async {
-    CustomUtils.showLoader(context);
-    final firebaseStorage = FirebaseStorage.instance;
-    await Permission.audio.request();
-    var snapshot = await firebaseStorage
-        .ref()
-        .child("${const Uuid().v1()}.$extension")
-        .putFile(selectedFile!);
-    var downloadUrl = await snapshot.ref.getDownloadURL();
-    await _databaseReference.child(FirebaseStructure.LIVEDATA).set({
-      'istrue': true,
-      'voice': downloadUrl,
-    });
-    CustomUtils.hideLoader(context);
-    CustomUtils.showToast('Upload successfully.');
-    setState(() {
-      selectedFile = null;
-    });
+  Widget getLiveTile(IconData icon, String title, dynamic value,
+      {String? symbol,
+      int type = 0,
+      void Function(int?)? onToggle,
+      void Function(double)? onChangeEnd,
+      int expandedFlex = 1}) {
+    return Expanded(
+        flex: expandedFlex,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5.0),
+          child: Center(
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                child: ListTile(
+                    leading: Icon(
+                      icon,
+                      color: colorPrimary,
+                      size: displaySize.width * 0.08,
+                    ),
+                    title: Text(
+                      title.toString(),
+                      style: TextStyle(
+                          color: color15,
+                          fontWeight: FontWeight.w400,
+                          fontSize: 16.0),
+                    ),
+                    subtitle: (type == 2)
+                        ? Slider(
+                            activeColor: colorPrimary,
+                            inactiveColor: colorGrey,
+                            value: value.toDouble(),
+                            max: 100,
+                            divisions: 100,
+                            onChangeEnd: onChangeEnd,
+                            onChanged: (double value) {},
+                          )
+                        : null,
+                    trailing: ((type == 1)
+                        ? ToggleSwitch(
+                            activeBgColor: [colorPrimary],
+                            initialLabelIndex: value ? 1 : 0,
+                            totalSwitches: 2,
+                            labels: const ['OFF', 'ON'],
+                            onToggle: onToggle,
+                          )
+                        : Text(
+                            '$value ${symbol ?? ''}',
+                            style: TextStyle(
+                                color: color15,
+                                fontWeight: FontWeight.w400,
+                                fontSize: 18.0),
+                          ))),
+              ),
+            ),
+          ),
+        ));
   }
 
-  Future<void> showChooserType() async {
-    _filePicker = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowMultiple: false,
-        allowedExtensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac']);
-    setState(() {
-      if (_filePicker != null) {
-        extension = _filePicker!.files.single.extension;
-        selectedFile = File(_filePicker!.files.single.path!);
-      } else {
-        selectedFile = null;
-      }
-    });
-  }
-
-  void clearData() {
-    setState(() {
-      selectedFile = null;
-    });
+  Future<void> enrollForQR() async {
+    _databaseReference
+        .child(FirebaseStructure.QR)
+        .set({'isNew': true, 'user': CustomUtils.loggedInUser!.uid}).then(
+            (value) => CustomUtils.showSnackBar(context,
+                "Enrollment Successfull", CustomUtils.SUCCESS_SNACKBAR));
   }
 }

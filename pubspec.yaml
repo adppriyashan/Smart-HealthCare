@@ -65,8 +65,7 @@ flutter:
     - assets/images/empty.png
     - assets/images/default.png
     - assets/images/home_bg.png
-    - assets/images/upload.png
-    - assets/images/drone_drop.gif
+    - assets/images/home.png
 
   fonts:
     - family: Raleway

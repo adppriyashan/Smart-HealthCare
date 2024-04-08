@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:form_validation/form_validation.dart';
 import 'package:smarthealthcare/Controllers/AuthController.dart';
+import 'package:smarthealthcare/Models/DB/User.dart';
 import 'package:smarthealthcare/Models/Strings/main_screen.dart';
 import 'package:smarthealthcare/Models/Utils/Common.dart';
 import 'package:smarthealthcare/Models/Utils/Utils.dart';
 import 'package:smarthealthcare/Views/Widgets/custom_button.dart';
-import 'package:smarthealthcare/Views/Widgets/custom_text_area.dart';
-import 'package:smarthealthcare/Views/Widgets/custom_text_date_chooser.dart';
 import 'package:smarthealthcare/Views/Widgets/custom_text_form_field.dart';
 
 import '../../Models/Strings/register_screen.dart';
@@ -28,6 +27,7 @@ class _BusinessRegisterState extends State<BusinessRegister> {
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
   final TextEditingController _confirm_password = TextEditingController();
+  final TextEditingController _mobile = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
 
@@ -36,6 +36,7 @@ class _BusinessRegisterState extends State<BusinessRegister> {
   @override
   void initState() {
     _name.text = "User";
+    _mobile.text = "0779778269";
     _email.text = "user@gmail.com";
     _password.text = "User@123";
     _confirm_password.text = "User@123";
@@ -189,6 +190,32 @@ class _BusinessRegisterState extends State<BusinessRegister> {
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 20.0, vertical: 5.0),
+                                  child: CustomTextFormField(
+                                      height: 5.0,
+                                      controller: _mobile,
+                                      backgroundColor: color7,
+                                      iconColor: colorPrimary,
+                                      isIconAvailable: true,
+                                      hint: 'Mobile Number',
+                                      icon: Icons.phone,
+                                      textInputType: TextInputType.emailAddress,
+                                      validation: (value) {
+                                        final validator = Validator(
+                                          validators: [
+                                            const RequiredValidator()
+                                          ],
+                                        );
+                                        return validator.validate(
+                                          label:
+                                              register_validation_invalid_email,
+                                          value: value,
+                                        );
+                                      },
+                                      obscureText: false),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20.0, vertical: 5.0),
                                   child: Row(
                                     children: [
                                       SizedBox(
@@ -252,8 +279,9 @@ class _BusinessRegisterState extends State<BusinessRegister> {
                                             await _authController
                                                 .doRegistration({
                                               'name': _name.text.toString(),
+                                              'mobile': _mobile.text.toString(),
                                               'email': _email.text.toString(),
-                                              'type': 2,
+                                              'type': LoggedUser.USER,
                                               'password':
                                                   _password.text.toString()
                                             }).then((value) =>
@@ -262,6 +290,7 @@ class _BusinessRegisterState extends State<BusinessRegister> {
 
                                             _formKey.currentState!.reset();
 
+                                            _mobile.text = '';
                                             _name.text = '';
                                             _email.text = '';
                                             _password.text = '';
